@@ -1,99 +1,44 @@
 <!DOCTYPE html>
-<html lang="es">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>FileStreamBot | {{ file_name }}</title>
 
     <!-- Plyr CSS -->
-    <link rel="stylesheet" href="https://cdn.plyr.io/4.2.20/plyr.css" />
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
 
     <style>
         body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
             background: #121212;
-            color: #eee;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 1rem;
+            color: white;
         }
-
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
         h1 {
             margin-bottom: 1rem;
-        }
-
-        .plyr {
-            max-width: 100%;
-            width: 720px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(29, 185, 84, 0.7);
-            background: black;
+            font-weight: 600;
         }
     </style>
 </head>
-
 <body>
-    <h1>{{ file_name }}</h1>
-
-    <!-- Plyr video player -->
-    <video
-        id="player"
-        class="plyr"
-        playsinline
-        controls
-        crossorigin="anonymous"
-        preload="metadata"
-    >
-        <source src="{{ file_url }}" type="video/mp4" />
-        Tu navegador no soporta la reproducción de video.
-    </video>
+    <div class="container">
+        <h1>{{ file_name }}</h1>
+        <video id="player" playsinline controls crossorigin="anonymous" style="width: 100%; max-height: 70vh;">
+            <source src="{{ file_url }}" type="video/mp4" />
+            Tu navegador no soporta la etiqueta video.
+        </video>
+        <p>Tamaño: {{ file_size }}</p>
+    </div>
 
     <!-- Plyr JS -->
-    <script src="https://cdn.plyr.io/4.2.20/plyr.polyfilled.js"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script>
-        // Inicializa Plyr con botón de descarga custom
-        const player = new Plyr("#player", {
-            controls: [
-                "play-large", // Play button in center
-                "play",
-                "progress",
-                "current-time",
-                "duration",
-                "mute",
-                "volume",
-                "settings",
-                "pip",
-                "airplay",
-                "fullscreen",
-                "download" // Añadimos botón descarga
-            ],
-            // Configuramos el botón de descarga para usar el mismo video URL
-            i18n: {
-                download: 'Descargar video'
-            }
-        });
-
-        // Agregar funcionalidad al botón de descarga
-        player.on('ready', () => {
-            const controls = player.elements.controls;
-            const downloadBtn = controls.querySelector('.plyr__control[data-plyr="download"]');
-
-            if(downloadBtn) {
-                downloadBtn.addEventListener('click', () => {
-                    const url = "{{ file_url }}";
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = "{{ file_name }}";
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                });
-            }
-        });
+        const player = new Plyr('#player');
     </script>
 </body>
-
 </html>
