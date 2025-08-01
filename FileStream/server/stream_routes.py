@@ -32,7 +32,7 @@ async def root_route_handler(_):
     )
 
 @routes.get("/watch/{path}", allow_head=True)
-async def stream_handler(request: web.Request):
+async def watch_handler(request: web.Request):
     try:
         path = request.match_info["path"]
         return web.Response(text=await render_page(path), content_type='text/html')
@@ -43,9 +43,8 @@ async def stream_handler(request: web.Request):
     except (AttributeError, BadStatusLine, ConnectionResetError):
         pass
 
-
 @routes.get("/dl/{path}", allow_head=True)
-async def stream_handler(request: web.Request):
+async def download_handler(request: web.Request):
     try:
         path = request.match_info["path"]
         return await media_streamer(request, path)
@@ -64,7 +63,7 @@ async def stream_handler(request: web.Request):
 class_cache = {}
 
 async def media_streamer(request: web.Request, db_id: str):
-    range_header = request.headers.get("Range", 0)
+    range_header = request.headers.get("Range", None)
     
     index = min(work_loads, key=work_loads.get)
     faster_client = multi_clients[index]
@@ -79,21 +78,25 @@ async def media_streamer(request: web.Request, db_id: str):
         logging.debug(f"Creating new ByteStreamer object for client {index}")
         tg_connect = utils.ByteStreamer(faster_client)
         class_cache[faster_client] = tg_connect
-    logging.debug("before calling get_file_properties")
+
     file_id = await tg_connect.get_file_properties(db_id, multi_clients)
-    logging.debug("after calling get_file_properties")
-    
     file_size = file_id.file_size
 
-    if range_header:
-        from_bytes, until_bytes = range_header.replace("bytes=", "").split("-")
-        from_bytes = int(from_bytes)
-        until_bytes = int(until_bytes) if until_bytes else file_size - 1
+    # Parsear rango de bytes correctamente
+    if range_header and "bytes=" in range_header:
+        ranges = range_header.replace("bytes=", "").split("-")
+        try:
+            from_bytes = int(ranges[0]) if ranges[0] else 0
+            until_bytes = int(ranges[1]) if len(ranges) > 1 and ranges[1] else file_size - 1
+        except ValueError:
+            from_bytes = 0
+            until_bytes = file_size - 1
     else:
-        from_bytes = request.http_range.start or 0
-        until_bytes = (request.http_range.stop or file_size) - 1
+        from_bytes = 0
+        until_bytes = file_size - 1
 
-    if (until_bytes > file_size) or (from_bytes < 0) or (until_bytes < from_bytes):
+    # Validar rango
+    if (until_bytes >= file_size) or (from_bytes < 0) or (until_bytes < from_bytes):
         return web.Response(
             status=416,
             body="416: Range not satisfiable",
@@ -109,25 +112,30 @@ async def media_streamer(request: web.Request, db_id: str):
 
     req_length = until_bytes - from_bytes + 1
     part_count = math.ceil(until_bytes / chunk_size) - math.floor(offset / chunk_size)
+
     body = tg_connect.yield_file(
         file_id, index, offset, first_part_cut, last_part_cut, part_count, chunk_size
     )
 
     mime_type = file_id.mime_type
     file_name = utils.get_name(file_id)
-    disposition = "attachment"
+
+    # Cambiar Content-Disposition para video/audio a inline (evita forzar descarga)
+    if mime_type and (mime_type.startswith("video/") or mime_type.startswith("audio/")):
+        disposition = "inline"
+    else:
+        disposition = "attachment"
 
     if not mime_type:
         mime_type = mimetypes.guess_type(file_name)[0] or "application/octet-stream"
 
-    # if "video/" in mime_type or "audio/" in mime_type:
-    #     disposition = "inline"
+    status_code = 206 if range_header else 200
 
     return web.Response(
-        status=206 if range_header else 200,
+        status=status_code,
         body=body,
         headers={
-            "Content-Type": f"{mime_type}",
+            "Content-Type": mime_type,
             "Content-Range": f"bytes {from_bytes}-{until_bytes}/{file_size}",
             "Content-Length": str(req_length),
             "Content-Disposition": f'{disposition}; filename="{file_name}"',
