@@ -9,25 +9,21 @@ db = Database(Telegram.DATABASE_URL, Telegram.SESSION_NAME)
 
 async def render_page(db_id):
     file_data = await db.get_file(db_id)
-
-    # Aseguramos que Server.URL termina con /
-    base_url = Server.URL if Server.URL.endswith("/") else Server.URL + "/"
-    src = urllib.parse.urljoin(base_url, f'dl/{file_data["_id"]}')
+    src = urllib.parse.urljoin(Server.URL, f'dl/{file_data["_id"]}')
     file_size = humanbytes(file_data['file_size'])
     file_name = file_data['file_name'].replace("_", " ")
+    mime_type = file_data.get('mime_type', 'application/octet-stream')
 
-    # Usar plantilla play.html solo si es video
-    if str(file_data['mime_type']).split('/')[0].strip() == 'video':
-        template_file = "FileStream/template/play.html"
-    else:
-        template_file = "FileStream/template/dl.html"
-        # Actualizar tamaño si la petición HEAD responde Content-Length
+    if str(mime_type).split('/')[0].strip() != 'video':
+        # Para archivos que no son video, obtener tamaño real del recurso remoto
         async with aiohttp.ClientSession() as session:
             async with session.head(src) as resp:
                 if resp.status == 200:
-                    cl = resp.headers.get('Content-Length')
-                    if cl:
-                        file_size = humanbytes(int(cl))
+                    content_length = resp.headers.get('Content-Length')
+                    if content_length:
+                        file_size = humanbytes(int(content_length))
+
+    template_file = "FileStream/template/play.html" if mime_type.startswith('video/') else "FileStream/template/dl.html"
 
     with open(template_file) as f:
         template = jinja2.Template(f.read())
@@ -35,5 +31,7 @@ async def render_page(db_id):
     return template.render(
         file_name=file_name,
         file_url=src,
-        file_size=file_size
+        file_size=file_size,
+        mime_type=mime_type,
+        file_id=file_data['_id']
     )
