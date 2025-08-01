@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>FileStreamBot | {{ file_name }}</title>
 
+    <!-- Plyr CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/4.2.20/plyr.css" />
+
     <style>
         body {
             background: #121212;
@@ -17,73 +20,79 @@
             margin: 0;
             padding: 1rem;
         }
+
         h1 {
             margin-bottom: 1rem;
         }
-        video {
+
+        .plyr {
             max-width: 100%;
-            height: auto;
+            width: 720px;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(29, 185, 84, 0.7);
             background: black;
-        }
-        .info {
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-            color: #bbb;
-        }
-        .actions {
-            margin-top: 1rem;
-        }
-        .actions a, .actions button {
-            background: #1db954;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            margin: 0 0.25rem;
-            border-radius: 5px;
-            text-decoration: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.3s ease;
-        }
-        .actions a:hover, .actions button:hover {
-            background: #14833b;
         }
     </style>
 </head>
 
 <body>
     <h1>{{ file_name }}</h1>
-    
+
+    <!-- Plyr video player -->
     <video
         id="player"
-        controls
+        class="plyr"
         playsinline
-        preload="metadata"
+        controls
         crossorigin="anonymous"
+        preload="metadata"
     >
         <source src="{{ file_url }}" type="video/mp4" />
         Tu navegador no soporta la reproducción de video.
     </video>
 
-    <div class="info">
-        Tamaño: {{ file_size }}
-    </div>
-
-    <div class="actions">
-        <a href="{{ file_url }}" download="{{ file_name }}">Descargar Video</a>
-        <button onclick="copyToClipboard()">Copiar Enlace</button>
-    </div>
-
+    <!-- Plyr JS -->
+    <script src="https://cdn.plyr.io/4.2.20/plyr.polyfilled.js"></script>
     <script>
-        function copyToClipboard() {
-            navigator.clipboard.writeText("{{ file_url }}").then(() => {
-                alert("Enlace copiado al portapapeles");
-            }).catch(() => {
-                alert("No se pudo copiar el enlace");
-            });
-        }
+        // Inicializa Plyr con botón de descarga custom
+        const player = new Plyr("#player", {
+            controls: [
+                "play-large", // Play button in center
+                "play",
+                "progress",
+                "current-time",
+                "duration",
+                "mute",
+                "volume",
+                "settings",
+                "pip",
+                "airplay",
+                "fullscreen",
+                "download" // Añadimos botón descarga
+            ],
+            // Configuramos el botón de descarga para usar el mismo video URL
+            i18n: {
+                download: 'Descargar video'
+            }
+        });
+
+        // Agregar funcionalidad al botón de descarga
+        player.on('ready', () => {
+            const controls = player.elements.controls;
+            const downloadBtn = controls.querySelector('.plyr__control[data-plyr="download"]');
+
+            if(downloadBtn) {
+                downloadBtn.addEventListener('click', () => {
+                    const url = "{{ file_url }}";
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "{{ file_name }}";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+            }
+        });
     </script>
 </body>
 
