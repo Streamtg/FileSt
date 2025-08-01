@@ -41,17 +41,17 @@ async def is_user_joined(bot, message: Message):
         if Telegram.VERIFY_PIC:
             ver = await message.reply_photo(
                 photo=Telegram.VERIFY_PIC,
-                caption="<i>Join my update channel to use me 🔐</i>",
+                caption="<i>Jᴏɪɴ ᴍʏ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ ᴛᴏ ᴜsᴇ ᴍᴇ 🔐</i>",
                 parse_mode=ParseMode.HTML,
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("❆ Join Our Channel ❆", url=invite_link.invite_link)]]
+                    [[InlineKeyboardButton("❆ Jᴏɪɴ Oᴜʀ Cʜᴀɴɴᴇʟ ❆", url=invite_link.invite_link)]]
                 )
             )
         else:
             ver = await message.reply_text(
-                text="<i>Join my update channel to use me 🔐</i>",
+                text="<i>Jᴏɪɴ ᴍʏ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ ᴛᴏ ᴜsᴇ ᴍᴇ 🔐</i>",
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("❆ Join Our Channel ❆", url=invite_link.invite_link)]]
+                    [[InlineKeyboardButton("❆ Jᴏɪɴ Oᴜʀ Cʜᴀɴɴᴇʟ ❆", url=invite_link.invite_link)]]
                 ),
                 parse_mode=ParseMode.HTML
             )
@@ -64,13 +64,12 @@ async def is_user_joined(bot, message: Message):
         return False
     except Exception:
         await message.reply_text(
-            text=f"<i>Something went wrong. Contact my developer</i> <b><a href='https://t.me/{Telegram.UPDATES_CHANNEL}'>[Click Here]</a></b>",
+            text=f"<i>Sᴏᴍᴇᴛʜɪɴɢ ᴡʀᴏɴɢ ᴄᴏɴᴛᴀᴄᴛ ᴍʏ ᴅᴇᴠᴇʟᴏᴘᴇʀ</i> <b><a href='https://t.me/{Telegram.UPDATES_CHANNEL}'>[ ᴄʟɪᴄᴋ ʜᴇʀᴇ ]</a></b>",
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True
         )
         return False
     return True
-
 
 # ---------------------[ PRIVATE GEN LINK + CALLBACK ]--------------------- #
 
@@ -87,23 +86,22 @@ async def gen_link(_id):
         stream_text = LANG.STREAM_TEXT.format(file_name, file_size, page_link, file_link)
         reply_markup = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("Stream", url=page_link)],
-                [InlineKeyboardButton("Get File", url=file_link),
-                 InlineKeyboardButton("Revoke File", callback_data=f"msgdelpvt_{_id}")],
-                [InlineKeyboardButton("Close", callback_data="close")]
+                [InlineKeyboardButton("sᴛʀᴇᴀᴍ", url=page_link)],
+                [InlineKeyboardButton("ɢᴇᴛ ғɪʟᴇ", url=file_link),
+                 InlineKeyboardButton("ʀᴇᴠᴏᴋᴇ ғɪʟᴇ", callback_data=f"msgdelpvt_{_id}")],
+                [InlineKeyboardButton("ᴄʟᴏsᴇ", callback_data="close")]
             ]
         )
     else:
         stream_text = LANG.STREAM_TEXT_X.format(file_name, file_size, file_link)
         reply_markup = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("Get File", url=file_link),
-                 InlineKeyboardButton("Revoke File", callback_data=f"msgdelpvt_{_id}")],
-                [InlineKeyboardButton("Close", callback_data="close")]
+                [InlineKeyboardButton("ɢᴇᴛ ғɪʟᴇ", url=file_link),
+                 InlineKeyboardButton("ʀᴇᴠᴏᴋᴇ ғɪʟᴇ", callback_data=f"msgdelpvt_{_id}")],
+                [InlineKeyboardButton("ᴄʟᴏsᴇ", callback_data="close")]
             ]
         )
     return reply_markup, stream_text
-
 
 # ---------------------[ GEN STREAM LINKS FOR CHANNEL ]--------------------- #
 
@@ -120,18 +118,17 @@ async def gen_linkx(m: Message, _id, name: list):
         stream_text = LANG.STREAM_TEXT_X.format(file_name, file_size, page_link)
         reply_markup = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("Stream", url=page_link)]
+                [InlineKeyboardButton("sᴛʀᴇᴀᴍ", url=page_link)]
             ]
         )
     else:
         stream_text = LANG.STREAM_TEXT_X.format(file_name, file_size, file_link)
         reply_markup = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("Get File", url=file_link)]
+                [InlineKeyboardButton("ɢᴇᴛ ғɪʟᴇ", url=file_link)]
             ]
         )
     return reply_markup, stream_text
-
 
 # ---------------------[ USER BANNED ]--------------------- #
 
@@ -145,7 +142,6 @@ async def is_user_banned(message):
         return True
     return False
 
-
 # ---------------------[ CHANNEL BANNED ]--------------------- #
 
 async def is_channel_banned(bot, message):
@@ -153,11 +149,12 @@ async def is_channel_banned(bot, message):
         await bot.edit_message_reply_markup(
             chat_id=message.chat.id,
             message_id=message.id,
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Channel is Banned", callback_data="N/A")]])
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton(f"ᴄʜᴀɴɴᴇʟ ɪs ʙᴀɴɴᴇᴅ", callback_data="N/A")]]
+            )
         )
         return True
     return False
-
 
 # ---------------------[ USER AUTH ]--------------------- #
 
@@ -168,13 +165,12 @@ async def is_user_authorized(message):
             return True
         if not (user_id in Telegram.AUTH_USERS):
             await message.reply_text(
-                text="You are not authorized to use this bot.",
+                text="Yᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴀᴜᴛʜᴏʀɪᴢᴇᴅ ᴛᴏ ᴜsᴇ ᴛʜɪs ʙᴏᴛ.",
                 parse_mode=ParseMode.MARKDOWN,
                 disable_web_page_preview=True
             )
             return False
     return True
-
 
 # ---------------------[ USER EXIST ]--------------------- #
 
@@ -183,7 +179,7 @@ async def is_user_exist(bot, message):
         await db.add_user(message.from_user.id)
         await bot.send_message(
             Telegram.ULOG_CHANNEL,
-            f"**#NewUser**\n**⬩ User Name :** [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n**⬩ User ID :** `{message.from_user.id}`"
+            f"**#NᴇᴡUsᴇʀ**\n**⬩ ᴜsᴇʀ ɴᴀᴍᴇ :** [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n**⬩ ᴜsᴇʀ ɪᴅ :** `{message.from_user.id}`"
         )
 
 async def is_channel_exist(bot, message):
@@ -192,7 +188,7 @@ async def is_channel_exist(bot, message):
         members = await bot.get_chat_members_count(message.chat.id)
         await bot.send_message(
             Telegram.ULOG_CHANNEL,
-            f"**#NewChannel** \n**⬩ Chat Name :** `{message.chat.title}`\n**⬩ Chat ID :** `{message.chat.id}`\n**⬩ Total Members :** `{members}`"
+            f"**#NᴇᴡCʜᴀɴɴᴇʟ** \n**⬩ ᴄʜᴀᴛ ɴᴀᴍᴇ :** `{message.chat.title}`\n**⬩ ᴄʜᴀᴛ ɪᴅ :** `{message.chat.id}`\n**⬩ ᴛᴏᴛᴀʟ ᴍᴇᴍʙᴇʀs :** `{members}`"
         )
 
 async def verify_user(bot, message):
