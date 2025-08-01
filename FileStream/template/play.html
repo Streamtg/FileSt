@@ -4,41 +4,81 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>FileStreamBot | {{ file_name }}</title>
-
-    <!-- Plyr CSS -->
+    <link rel="icon" href="https://i.ibb.co/Hh4kF2b/icon.png" type="image/x-icon" />
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px;
-            background: #121212;
-            color: white;
+            font-family: 'Josefin Sans', sans-serif;
+            background-color: #121212;
+            color: #eee;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
         }
-        .container {
+        header {
+            padding: 1rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-align: center;
+            width: 100%;
+            background-color: #1f1f1f;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+        main {
+            flex: 1;
+            width: 90%;
             max-width: 900px;
-            margin: auto;
+            margin: 2rem 0;
         }
-        h1 {
-            margin-bottom: 1rem;
+        .file-info {
+            margin: 1rem 0;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        .download-btn {
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .download-btn a {
+            background: #e50914;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 5px;
             font-weight: 600;
+        }
+        .download-btn a:hover {
+            background: #b1060f;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>{{ file_name }}</h1>
-        <video id="player" playsinline controls crossorigin="anonymous" style="width: 100%; max-height: 70vh;">
-            <source src="{{ file_url }}" type="video/mp4" />
-            Tu navegador no soporta la etiqueta video.
-        </video>
-        <p>Tamaño: {{ file_size }}</p>
-    </div>
+    <header>
+        FileStreamBot - {{ file_name }}
+    </header>
 
-    <!-- Plyr JS -->
+    <main>
+        <video id="player" playsinline controls crossorigin>
+            <source src="/dl/{{ file_id }}" type="{{ mime_type }}">
+            Tu navegador no soporta la reproducción de video.
+        </video>
+
+        <div class="file-info">
+            Tamaño: {{ file_size }}
+        </div>
+
+        <div class="download-btn">
+            <a href="/dl/{{ file_id }}" download="{{ file_name }}">Descargar video</a>
+        </div>
+    </main>
+
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script>
-        const player = new Plyr('#player');
+        const player = new Plyr('#player', {
+            controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+            autoplay: false,
+            keyboard: {focused: true, global: false},
+        });
     </script>
 </body>
 </html>
