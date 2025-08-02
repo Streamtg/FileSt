@@ -1,5 +1,18 @@
 {
-  "users": [],
-  "blacklist": [],
-  "files": []
+  "files": {
+    "some_db_id_123": {
+      "file_id": "abc123",
+      "file_size": 12345,
+      "mime_type": "video/mp4",
+      "file_name": "video.mp4",
+      "file_unique_id": "unique_abc123",
+      "file_ids": {
+        "client_id_1": "file_id_1",
+        "client_id_2": "file_id_2"
+      }
+    }
+  },
+  "blacklist": [
+    // usuarios baneados, etc.
+  ]
 }
