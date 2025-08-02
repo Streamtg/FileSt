@@ -3,10 +3,10 @@ import logging
 from datetime import datetime
 from pyrogram import Client
 from typing import Any, Optional
-
 from pyrogram.enums import ParseMode, ChatType
 from pyrogram.types import Message
 from pyrogram.file_id import FileId
+
 from FileStream.bot import FileStream
 from FileStream.utils.database import Database
 from FileStream.config import Telegram
@@ -20,37 +20,31 @@ async def get_file_ids(client: Client | bool, db_id: str, multi_clients, message
     try:
         file_info = await db.get_file(db_id)
     except Exception:
-        # Si no existe, lo registramos
         logging.warning(f"Archivo con ID {db_id} no encontrado, creando...")
         file_info_data = get_file_info(message)
         inserted_id = await db.add_file(file_info_data)
         file_info = await db.get_file(inserted_id)
 
     if ("file_ids" not in file_info) or not client:
-        logging.debug("Storing file_id of all clients in DB")
         log_msg = await send_file(FileStream, db_id, file_info['file_id'], message)
         await db.update_file_ids(db_id, await update_file_id(log_msg.id, multi_clients))
-        logging.debug("Stored file_id of all clients in DB")
         if not client:
             return
         file_info = await db.get_file(db_id)
 
     file_id_info = file_info.setdefault("file_ids", {})
     if str(client.id) not in file_id_info:
-        logging.debug("Storing file_id in DB")
         log_msg = await send_file(FileStream, db_id, file_info['file_id'], message)
         msg = await client.get_messages(Telegram.FLOG_CHANNEL, log_msg.id)
         media = get_media_from_message(msg)
         file_id_info[str(client.id)] = getattr(media, "file_id", "")
         await db.update_file_ids(db_id, file_id_info)
-        logging.debug("Stored file_id in DB")
 
     file_id = FileId.decode(file_id_info[str(client.id)])
     setattr(file_id, "file_size", file_info['file_size'])
     setattr(file_id, "mime_type", file_info['mime_type'])
     setattr(file_id, "file_name", file_info['file_name'])
     setattr(file_id, "unique_id", file_info['file_unique_id'])
-    logging.debug("Ending get_file_ids")
     return file_id
 
 
@@ -63,11 +57,6 @@ def get_media_from_message(message: "Message") -> Any:
         media = getattr(message, attr, None)
         if media:
             return media
-
-
-def get_media_file_size(m):
-    media = get_media_from_message(m)
-    return getattr(media, "file_size", "None")
 
 
 def get_name(media_msg: Message | FileId) -> str:
