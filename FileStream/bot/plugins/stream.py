@@ -1,14 +1,14 @@
-
 import asyncio
 from FileStream.bot import FileStream, multi_clients
 from FileStream.utils.bot_utils import is_user_banned, is_user_exist, is_user_joined, gen_link, is_channel_banned, is_channel_exist, is_user_authorized
-from FileStream.utils.database import Database
+from FileStream.utils.database import Database, FIleNotFound
 from FileStream.utils.file_properties import get_file_ids, get_file_info
 from FileStream.config import Telegram
 from pyrogram import filters, Client
 from pyrogram.errors import FloodWait
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums.parse_mode import ParseMode
+
 db = Database(Telegram.DATABASE_URL, Telegram.SESSION_NAME)
 
 @FileStream.on_message(
@@ -45,6 +45,8 @@ async def private_receive_handler(bot: Client, message: Message):
             reply_markup=reply_markup,
             quote=True
         )
+    except FIleNotFound:
+        await message.reply_text("Archivo no encontrado en la base de datos. Intente subirlo nuevamente.")
     except FloodWait as e:
         print(f"Sleeping for {str(e.value)}s")
         await asyncio.sleep(e.value)
@@ -80,7 +82,7 @@ async def channel_receive_handler(bot: Client, message: Message):
             message_id=message.id,
             reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("Dᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋ 📥",
-                                       url=f"https://t.me/{FileStream.username}?start=stream_{str(inserted_id)}")]])
+                                       url=f"https://t.me/{FileStream.username}?start=stream_{str(inserted_id)}")]]),
         )
 
     except FloodWait as w:
@@ -93,4 +95,3 @@ async def channel_receive_handler(bot: Client, message: Message):
         await bot.send_message(chat_id=Telegram.ULOG_CHANNEL, text=f"**#EʀʀᴏʀTʀᴀᴄᴋᴇʙᴀᴄᴋ:** `{e}`",
                                disable_web_page_preview=True)
         print(f"Cᴀɴ'ᴛ Eᴅɪᴛ Bʀᴏᴀᴅᴄᴀsᴛ Mᴇssᴀɢᴇ!\nEʀʀᴏʀ:  **Gɪᴠᴇ ᴍᴇ ᴇᴅɪᴛ ᴘᴇʀᴍɪssɪᴏɴ ɪɴ ᴜᴘᴅᴀᴛᴇs ᴀɴᴅ ʙɪɴ Cʜᴀɴɴᴇʟ!{e}**")
-
