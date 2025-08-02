@@ -7,10 +7,7 @@ from FileStream.utils.human_readable import humanbytes
 from FileStream.config import Telegram, Server
 from FileStream.bot import FileStream
 import asyncio
-from typing import (
-    Union
-)
-
+from typing import Union
 
 db = Database(Telegram.DATABASE_URL, Telegram.SESSION_NAME)
 
@@ -25,9 +22,9 @@ async def get_invite_link(bot, chat_id: Union[str, int]):
 
 async def is_user_joined(bot, message: Message):
     if Telegram.FORCE_SUB_ID and Telegram.FORCE_SUB_ID.startswith("-100"):
-        channel_chat_id = int(Telegram.FORCE_SUB_ID)    # When id startswith with -100
+        channel_chat_id = int(Telegram.FORCE_SUB_ID)
     elif Telegram.FORCE_SUB_ID and (not Telegram.FORCE_SUB_ID.startswith("-100")):
-        channel_chat_id = Telegram.FORCE_SUB_ID     # When id not startswith -100
+        channel_chat_id = Telegram.FORCE_SUB_ID
     else:
         return 200
     try:
@@ -77,8 +74,6 @@ async def is_user_joined(bot, message: Message):
         return False
     return True
 
-#---------------------[ PRIVATE GEN LINK + CALLBACK ]---------------------#
-
 async def gen_link(_id):
     file_info = await db.get_file(_id)
     file_name = file_info['file_name']
@@ -109,36 +104,6 @@ async def gen_link(_id):
         )
     return reply_markup, stream_text
 
-#---------------------[ GEN STREAM LINKS FOR CHANNEL ]---------------------#
-
-async def gen_linkx(m:Message , _id, name: list):
-    file_info = await db.get_file(_id)
-    file_name = file_info['file_name']
-    mime_type = file_info['mime_type']
-    file_size = humanbytes(file_info['file_size'])
-
-    page_link = f"{Server.URL}watch/{_id}"
-    stream_link = f"{Server.URL}dl/{_id}"
-    file_link = f"https://t.me/{FileStream.username}?start=file_{_id}"
-
-    if "video" in mime_type:
-        stream_text= LANG.STREAM_TEXT_X.format(file_name, file_size, stream_link, page_link)
-        reply_markup = InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("sᴛʀᴇᴀᴍ", url=page_link), InlineKeyboardButton("ᴅᴏᴡɴʟᴏᴀᴅ", url=stream_link)]
-            ]
-        )
-    else:
-        stream_text= LANG.STREAM_TEXT_X.format(file_name, file_size, stream_link, file_link)
-        reply_markup = InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("ᴅᴏᴡɴʟᴏᴀᴅ", url=stream_link)]
-            ]
-        )
-    return reply_markup, stream_text
-
-#---------------------[ USER BANNED ]---------------------#
-
 async def is_user_banned(message):
     if await db.is_user_banned(message.from_user.id):
         await message.reply_text(
@@ -149,20 +114,15 @@ async def is_user_banned(message):
         return True
     return False
 
-#---------------------[ CHANNEL BANNED ]---------------------#
-
 async def is_channel_banned(bot, message):
     if await db.is_user_banned(message.chat.id):
         await bot.edit_message_reply_markup(
             chat_id=message.chat.id,
             message_id=message.id,
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton(f"ᴄʜᴀɴɴᴇʟ ɪs ʙᴀɴɴᴇᴅ", callback_data="N/A")]])
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f"ᴄʜᴀɴɴᴇʟ ɪs ʙᴀɴɴᴇᴅ", callback_data="N/A")]])
         )
         return True
     return False
-
-#---------------------[ USER AUTH ]---------------------#
 
 async def is_user_authorized(message):
     if hasattr(Telegram, 'AUTH_USERS') and Telegram.AUTH_USERS:
@@ -180,8 +140,6 @@ async def is_user_authorized(message):
             return False
 
     return True
-
-#---------------------[ USER EXIST ]---------------------#
 
 async def is_user_exist(bot, message):
     if not bool(await db.get_user(message.from_user.id)):
