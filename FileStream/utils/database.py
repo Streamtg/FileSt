@@ -1,83 +1,119 @@
-import json
 import os
+import json
 import asyncio
-from typing import Optional
 
+class FIleNotFound(Exception):
+    pass
+
+DB_FILE_PATH = os.path.join(os.path.dirname(__file__), "database.json")
+
+DEFAULT_DB_STRUCTURE = {
+    "users": [],
+    "files": {},
+    "blacklist": []
+}
 
 class Database:
-    def __init__(self, mongo_uri: Optional[str], session_name: str):
-        self.mongo_uri = mongo_uri
-        self.session_name = session_name
-        self.local_path = os.path.join(os.path.dirname(__file__), "database.json")
-
-        if not os.path.exists(self.local_path):
-            self.local_data = {
-                "users": [],
-                "files": {},
-                "blacklist": []
-            }
-            self._save_local()
+    def __init__(self, database_url=None, session_name=None):
+        # Ignoramos database_url y session_name para el almacenamiento local JSON
+        self.db_file = DB_FILE_PATH
+        # Crear base de datos si no existe o está corrupta
+        if not os.path.exists(self.db_file):
+            with open(self.db_file, "w") as f:
+                json.dump(DEFAULT_DB_STRUCTURE, f, indent=2)
         else:
-            with open(self.local_path, "r", encoding="utf-8") as f:
-                try:
-                    self.local_data = json.load(f)
-                except Exception:
-                    self.local_data = {
-                        "users": [],
-                        "files": {},
-                        "blacklist": []
-                    }
-                    self._save_local()
+            try:
+                with open(self.db_file, "r") as f:
+                    json.load(f)  # Verificar que JSON sea válido
+            except (json.JSONDecodeError, ValueError):
+                with open(self.db_file, "w") as f:
+                    json.dump(DEFAULT_DB_STRUCTURE, f, indent=2)
 
-        # Garantiza que existan todas las claves necesarias
-        if "users" not in self.local_data:
-            self.local_data["users"] = []
-        if "files" not in self.local_data:
-            self.local_data["files"] = {}
-        if "blacklist" not in self.local_data:
-            self.local_data["blacklist"] = []
-        self._save_local()
+        # Cargar datos en memoria
+        with open(self.db_file, "r") as f:
+            self.local_data = json.load(f)
 
-    def _save_local(self):
-        with open(self.local_path, "w", encoding="utf-8") as f:
-            json.dump(self.local_data, f, indent=2, ensure_ascii=False)
-
-    # ---------------------- USER METHODS ----------------------
-    async def add_user(self, user_id: int):
-        if user_id not in self.local_data["users"]:
-            self.local_data["users"].append(user_id)
-            self._save_local()
-
-    async def get_user(self, user_id: int):
-        return user_id if user_id in self.local_data["users"] else None
-
-    # ---------------------- FILE METHODS ----------------------
-    async def add_file(self, file_info: dict):
-        _id = str(file_info["file_unique_id"])
-        self.local_data["files"][_id] = file_info
-        self._save_local()
-        return _id
+    async def _save(self):
+        # Guardar local_data en JSON (bloqueante, se puede adaptar a async si quieres)
+        with open(self.db_file, "w") as f:
+            json.dump(self.local_data, f, indent=2)
 
     async def get_file(self, _id: str):
-        if _id in self.local_data["files"]:
-            return self.local_data["files"][_id]
-        raise FileNotFoundError
+        # Busca el archivo por _id dentro de files
+        files = self.local_data.get("files", {})
+        # files es dict con keys = id, values = file info dict
+        file_info = files.get(_id)
+        if not file_info:
+            raise FIleNotFound
+        return file_info
 
-    async def update_file_ids(self, _id: str, file_ids: dict):
-        if _id in self.local_data["files"]:
-            self.local_data["files"][_id]["file_ids"] = file_ids
-            self._save_local()
+    async def add_file(self, file_info: dict):
+        # Añade un archivo nuevo con un id único (ejemplo: usar file_unique_id como clave)
+        file_id = file_info.get("file_unique_id")
+        if not file_id:
+            raise ValueError("El archivo debe tener 'file_unique_id' para usarlo como ID")
 
-    # ---------------------- BAN METHODS ----------------------
-    async def is_user_banned(self, user_id: int):
-        return user_id in self.local_data["blacklist"]
+        if "files" not in self.local_data:
+            self.local_data["files"] = {}
+
+        # Evitar duplicados: si ya existe un archivo igual (por user_id y unique_id), devolver la key existente
+        for k, f in self.local_data["files"].items():
+            if isinstance(f, dict) and f.get("user_id") == file_info.get("user_id") and f.get("file_unique_id") == file_info.get("file_unique_id"):
+                return k
+
+        # Añadir nuevo
+        self.local_data["files"][file_id] = file_info
+        await self._save()
+        return file_id
+
+    async def update_file_ids(self, file_id: str, file_ids: dict):
+        if "files" not in self.local_data:
+            self.local_data["files"] = {}
+
+        if file_id not in self.local_data["files"]:
+            raise FIleNotFound
+
+        self.local_data["files"][file_id]["file_ids"] = file_ids
+        await self._save()
+
+    async def is_user_banned(self, user_id: int) -> bool:
+        blacklist = self.local_data.get("blacklist", [])
+        # blacklist puede ser lista simple de ids o dicts con "id" keys, según tu esquema
+        for banned in blacklist:
+            if isinstance(banned, dict) and banned.get("id") == user_id:
+                return True
+            if banned == user_id:
+                return True
+        return False
+
+    async def get_user(self, user_id: int):
+        users = self.local_data.get("users", [])
+        for user in users:
+            # Suponiendo user es dict con clave "id"
+            if isinstance(user, dict) and user.get("id") == user_id:
+                return user
+        return None
+
+    async def add_user(self, user_info: dict):
+        if "users" not in self.local_data:
+            self.local_data["users"] = []
+
+        # Evitar duplicados
+        for user in self.local_data["users"]:
+            if isinstance(user, dict) and user.get("id") == user_info.get("id"):
+                return
+
+        self.local_data["users"].append(user_info)
+        await self._save()
 
     async def ban_user(self, user_id: int):
+        if "blacklist" not in self.local_data:
+            self.local_data["blacklist"] = []
         if user_id not in self.local_data["blacklist"]:
             self.local_data["blacklist"].append(user_id)
-            self._save_local()
+            await self._save()
 
     async def unban_user(self, user_id: int):
-        if user_id in self.local_data["blacklist"]:
+        if "blacklist" in self.local_data and user_id in self.local_data["blacklist"]:
             self.local_data["blacklist"].remove(user_id)
-            self._save_local()
+            await self._save()
